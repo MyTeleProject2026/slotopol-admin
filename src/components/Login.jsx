@@ -1,1 +1,39 @@
-import{useState}from'react';export default function Login({onLogin}){const[u,setU]=useState(''),[p,setP]=useState(''),[e,setE]=useState('');function submit(x){x.preventDefault();if(!u||!p){setE('Enter an administrator username and password.');return}onLogin(btoa(`${u}:${p}`))}return <div className="login-page"><form className="login-card" onSubmit={submit}><div className="brand large">SLOTOPOL <span>ADMIN</span></div><h1>Administrator Login</h1><p>Manage clubs, users, games, and virtual-credit allocations.</p><label>Username<input value={u} onChange={x=>setU(x.target.value)}/></label><label>Password<input type="password" value={p} onChange={x=>setP(x.target.value)}/></label>{e&&<div className="error">{e}</div>}<button className="primary">Sign in</button></form></div>}
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import api from '../api/client'
+
+export default function Login() {
+  const [email, setEmail] = useState('admin@slotopol.com')
+  const [secret, setSecret] = useState('admin123')
+  const [error, setError] = useState('')
+  const navigate = useNavigate()
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      const res = await api.post('/signin', { email, secret })
+      localStorage.setItem('token', res.data.access)
+      navigate('/')
+    } catch (err) {
+      setError('Invalid credentials')
+    }
+  }
+
+  return (
+    <div style={{ maxWidth: 400, margin: '100px auto' }}>
+      <h2>Slotopol Admin</h2>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>Email</label>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+        </div>
+        <div>
+          <label>Secret</label>
+          <input type="password" value={secret} onChange={e => setSecret(e.target.value)} required />
+        </div>
+        <button type="submit">Sign In</button>
+      </form>
+    </div>
+  )
+          }
