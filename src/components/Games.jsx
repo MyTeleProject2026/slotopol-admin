@@ -7,10 +7,9 @@ export default function Games() {
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
-  // Helper function to generate the exact alias the backend uses
   const getAlias = (prov, name) => {
     const str = `${prov}/${name}`;
-    return str.toLowerCase().replace(/[^a-z0-9_\/]/g, ''); // Removes special chars
+    return str.toLowerCase().replace(/[^a-z0-9_\/]/g, '');
   }
 
   const fetchGames = async () => {
@@ -27,7 +26,6 @@ export default function Games() {
 
   useEffect(() => { fetchGames() }, [selectedClub])
 
-  // Toggle game permission
   const toggleGame = async (alias, currentStatus) => {
     try {
       await api.post('/admin/game/permission', { 
@@ -41,15 +39,11 @@ export default function Games() {
     }
   }
 
-  // ============================================================
-  // FIXED: Auto-Discover & Enable ALL Games
-  // ============================================================
   const handleAutoDiscover = async () => {
     if (!confirm(`This will fetch all compiled games from the backend and enable them for Club ${selectedClub}. Continue?`)) return;
     
     setSyncing(true)
     try {
-      // Step 1: Fetch all games (ignore filters)
       const res = await api.get(`/game/list?inc=all`)
       const allGames = res.data.list || []
 
@@ -59,13 +53,9 @@ export default function Games() {
         return
       }
 
-      // Step 2: Loop through every game, calculate the alias, and enable it
       let successCount = 0
       for (const game of allGames) {
-        // Generate the alias locally because the backend doesn't send it directly
         const alias = getAlias(game.prov, game.name)
-        
-        // Skip if alias is somehow empty
         if (!alias) continue
 
         try {
@@ -81,10 +71,11 @@ export default function Games() {
       }
 
       alert(`✅ Successfully enabled ${successCount} out of ${allGames.length} games for Club ${selectedClub}!`)
-      fetchGames() // Refresh the table
+      fetchGames()
 
     } catch (error) {
-      alert("Error during auto-discovery: " + error.message)
+      // This prints the EXACT error message from the backend (like 400)
+      alert("Error during auto-discovery: " + (error.response?.data?.what || error.message))
     } finally {
       setSyncing(false)
     }
@@ -131,7 +122,6 @@ export default function Games() {
             </thead>
             <tbody>
               {games.map(g => {
-                // Calculate alias for the table row display
                 const rowAlias = getAlias(g.prov, g.name);
                 return (
                   <tr key={rowAlias}>
