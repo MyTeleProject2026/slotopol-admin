@@ -11,7 +11,7 @@ export default function Clubs() {
   return (
     <div>
       <h2>Clubs</h2>
-      <table border="1">
+      <table>
         <thead>
           <tr><th>CID</th><th>Name</th><th>Bank</th><th>Fund</th><th>Deposit</th></tr>
         </thead>
@@ -19,10 +19,10 @@ export default function Clubs() {
           {clubs.map(c => (
             <tr key={c.cid}>
               <td>{c.cid}</td>
-              <td>{c.name}</td>
-              <td>{c.bank}</td>
-              <td>{c.fund}</td>
-              <td>{c.lock}</td>
+              <td><span className="highlight">{c.name}</span></td>
+              <td>${c.bank}</td>
+              <td>${c.fund}</td>
+              <td>${c.lock}</td>
             </tr>
           ))}
         </tbody>
