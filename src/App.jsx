@@ -11,33 +11,92 @@ function PrivateRoute({ children }) {
   return token ? children : <Navigate to="/login" />
 }
 
-function Layout({ children }) {
+/* ===============================================
+   DESKTOP SIDEBAR
+   =============================================== */
+function Sidebar() {
   const location = useLocation()
-
+  
   const handleLogout = () => {
     localStorage.removeItem('token')
     window.location.href = '/login'
   }
 
+  const navItems = [
+    { path: '/', label: 'Dashboard', icon: '📊' },
+    { path: '/clubs', label: 'Clubs', icon: '🏛️' },
+    { path: '/users', label: 'Users', icon: '🧑‍💻' },
+    { path: '/games', label: 'Games', icon: '🎮' },
+    { path: '/allocations', label: 'Allocations', icon: '💰' },
+  ]
+
+  return (
+    <div className="sidebar">
+      <div className="sidebar-brand">🎰 Slotopol</div>
+      <div className="sidebar-links">
+        {navItems.map((item) => (
+          <Link 
+            key={item.path} 
+            to={item.path} 
+            className={location.pathname === item.path ? 'sidebar-item active' : 'sidebar-item'}
+          >
+            <span>{item.icon}</span> {item.label}
+          </Link>
+        ))}
+      </div>
+      <button onClick={handleLogout} className="sidebar-logout">
+        🚪 Logout
+      </button>
+    </div>
+  )
+}
+
+/* ===============================================
+   MOBILE BOTTOM NAVIGATION
+   =============================================== */
+function BottomNav() {
+  const location = useLocation()
+  
+  const navItems = [
+    { path: '/', label: 'Dashboard', icon: '📊' },
+    { path: '/clubs', label: 'Clubs', icon: '🏛️' },
+    { path: '/users', label: 'Users', icon: '🧑‍💻' },
+    { path: '/games', label: 'Games', icon: '🎮' },
+    { path: '/allocations', label: 'Allocations', icon: '💰' },
+  ]
+
+  return (
+    <div className="bottom-nav">
+      {navItems.map((item) => (
+        <Link 
+          key={item.path} 
+          to={item.path} 
+          className={location.pathname === item.path ? 'bottom-item active' : 'bottom-item'}
+        >
+          <span className="bottom-icon">{item.icon}</span>
+          <span className="bottom-label">{item.label}</span>
+        </Link>
+      ))}
+    </div>
+  )
+}
+
+/* ===============================================
+   MAIN LAYOUT WRAPPER
+   =============================================== */
+function Layout({ children }) {
   return (
     <div className="app-wrapper">
-      {/* Glass Navigation Bar */}
-      <nav className="nav-glass">
-        <div className="nav-brand">🎰 Slotopol Admin</div>
-        <div className="nav-links">
-          <Link to="/" className={location.pathname === '/' ? 'active' : ''}>Dashboard</Link>
-          <Link to="/clubs" className={location.pathname === '/clubs' ? 'active' : ''}>Clubs</Link>
-          <Link to="/users" className={location.pathname === '/users' ? 'active' : ''}>Users</Link>
-          <Link to="/games" className={location.pathname === '/games' ? 'active' : ''}>Games</Link>
-          <Link to="/allocations" className={location.pathname === '/allocations' ? 'active' : ''}>Allocations</Link>
-          <button onClick={handleLogout} className="logout-btn">Logout</button>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <div className="content-area">
+      {/* Desktop Sidebar */}
+      <Sidebar />
+      
+      {/* Main Content Area */}
+      <div className="main-content">
         {children}
       </div>
+
+      {/* Mobile Bottom Nav */}
+      <BottomNav />
     </div>
   )
 }
