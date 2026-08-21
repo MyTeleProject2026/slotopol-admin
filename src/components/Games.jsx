@@ -7,7 +7,12 @@ export default function Games() {
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
-  // Fetch games from the backend
+  // Helper function to generate the exact alias the backend uses
+  const getAlias = (prov, name) => {
+    const str = `${prov}/${name}`;
+    return str.toLowerCase().replace(/[^a-z0-9_\/]/g, ''); // Removes special chars
+  }
+
   const fetchGames = async () => {
     setLoading(true)
     try {
@@ -32,12 +37,12 @@ export default function Games() {
       })
       fetchGames()
     } catch (e) {
-      alert("Failed to toggle game. Make sure the backend /admin/game/permission endpoint exists.")
+      alert("Failed to toggle game. " + (e.response?.data?.what || e.message))
     }
   }
 
   // ============================================================
-  // NEW FEATURE: Auto-Discover & Enable ALL Games
+  // FIXED: Auto-Discover & Enable ALL Games
   // ============================================================
   const handleAutoDiscover = async () => {
     if (!confirm(`This will fetch all compiled games from the backend and enable them for Club ${selectedClub}. Continue?`)) return;
@@ -54,18 +59,24 @@ export default function Games() {
         return
       }
 
-      // Step 2: Loop through every game and enable it
+      // Step 2: Loop through every game, calculate the alias, and enable it
       let successCount = 0
       for (const game of allGames) {
+        // Generate the alias locally because the backend doesn't send it directly
+        const alias = getAlias(game.prov, game.name)
+        
+        // Skip if alias is somehow empty
+        if (!alias) continue
+
         try {
           await api.post('/admin/game/permission', {
             club_id: parseInt(selectedClub),
-            game_alias: game.alias,
+            game_alias: alias,
             enabled: true
           })
           successCount++
         } catch (e) {
-          console.warn(`Failed to enable ${game.alias}`, e)
+          console.warn(`Failed to enable ${alias}`, e)
         }
       }
 
@@ -83,7 +94,6 @@ export default function Games() {
     <div>
       <h2>🎮 Game Library Controller</h2>
       
-      {/* Club Selector + Auto-Discover Button */}
       <div className="glass-card" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
         <label style={{ color: 'white' }}>Control games for Club ID:</label>
         <input 
@@ -93,7 +103,6 @@ export default function Games() {
           style={{ width: '80px', padding: '8px', color: 'white' }}
         />
         
-        {/* AUTO-DISCOVER BUTTON */}
         <button 
           className="action-btn action-btn-save" 
           onClick={handleAutoDiscover}
@@ -104,7 +113,6 @@ export default function Games() {
         </button>
       </div>
 
-      {/* Game List Table */}
       <div className="glass-card" style={{ minHeight: '200px' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>Loading available games...</div>
@@ -122,26 +130,30 @@ export default function Games() {
               <tr><th>Alias</th><th>Provider</th><th>Title</th><th>Status</th><th>Action</th></tr>
             </thead>
             <tbody>
-              {games.map(g => (
-                <tr key={g.alias}>
-                  <td><span className="highlight">{g.alias}</span></td>
-                  <td>{g.prov}</td>
-                  <td>{g.name}</td>
-                  <td>
-                    <span style={{ color: g.enabled ? '#00F0FF' : '#666' }}>
-                      {g.enabled ? 'ACTIVE' : 'DISABLED'}
-                    </span>
-                  </td>
-                  <td>
-                    <button 
-                      className={g.enabled ? "action-btn action-btn-delete" : "action-btn action-btn-save"}
-                      onClick={() => toggleGame(g.alias, g.enabled)}
-                    >
-                      {g.enabled ? 'Disable' : 'Enable'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {games.map(g => {
+                // Calculate alias for the table row display
+                const rowAlias = getAlias(g.prov, g.name);
+                return (
+                  <tr key={rowAlias}>
+                    <td><span className="highlight">{rowAlias}</span></td>
+                    <td>{g.prov}</td>
+                    <td>{g.name}</td>
+                    <td>
+                      <span style={{ color: g.enabled ? '#00F0FF' : '#666' }}>
+                        {g.enabled ? 'ACTIVE' : 'DISABLED'}
+                      </span>
+                    </td>
+                    <td>
+                      <button 
+                        className={g.enabled ? "action-btn action-btn-delete" : "action-btn action-btn-save"}
+                        onClick={() => toggleGame(rowAlias, g.enabled)}
+                      >
+                        {g.enabled ? 'Disable' : 'Enable'}
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}
