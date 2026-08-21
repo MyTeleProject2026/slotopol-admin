@@ -1,1 +1,26 @@
-import{useState}from'react';export default function Users(){const[u]=useState([{id:'u-1001',username:'player001',club:'Main Club',balance:'10,500'},{id:'u-1002',username:'player002',club:'VIP Club',balance:'42,000'},{id:'u-1003',username:'player003',club:'Main Club',balance:'7,250'}]);return <section><div className="toolbar"><input placeholder="Search users..."/></div><div className="panel"><h2>Users</h2><table><thead><tr><th>ID</th><th>Username</th><th>Club</th><th>Virtual balance</th></tr></thead><tbody>{u.map(x=><tr key={x.id}><td>{x.id}</td><td>{x.username}</td><td>{x.club}</td><td>{x.balance}</td></tr>)}</tbody></table></div></section>}
+import { useEffect, useState } from 'react'
+import api from '../api/client'
+
+export default function Users() {
+  const [users, setUsers] = useState([])
+
+  useEffect(() => {
+    // We need a /user/list endpoint – we'll add it later.
+    // For now, we'll manually query known users.
+    api.get('/user/is?uid=1').then(res => setUsers([{uid:1, email:'admin@slotopol.com', name:'Administrator'}]))
+  }, [])
+
+  return (
+    <div>
+      <h2>Users</h2>
+      <table border="1">
+        <thead><tr><th>UID</th><th>Email</th><th>Name</th></tr></thead>
+        <tbody>
+          {users.map(u => (
+            <tr key={u.uid}><td>{u.uid}</td><td>{u.email}</td><td>{u.name}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
