@@ -1,1 +1,18 @@
-const cards=[['Clubs','12','Active platform clubs'],['Users','1,248','Registered users'],['Games','36','Configured games'],['Allocations','4,892','Credit operations']];export default function Dashboard(){return <section><div className="stats-grid">{cards.map(([t,v,n])=><div className="stat-card" key={t}><span>{t}</span><strong>{v}</strong><small>{n}</small></div>)}</div><div className="panel"><h2>Platform overview</h2><p>Use the navigation to manage Slotopol platform resources. Connect the API client to your Slotopol-server endpoints before using production data.</p></div></section>}
+import { Link } from 'react-router-dom'
+
+export default function Dashboard() {
+  return (
+    <div>
+      <h1>Slotopol Admin Dashboard</h1>
+      <nav>
+        <Link to="/clubs">Clubs</Link> |{' '}
+        <Link to="/users">Users</Link> |{' '}
+        <Link to="/games">Games</Link> |{' '}
+        <Link to="/allocations">Allocations</Link>
+      </nav>
+      <div style={{ marginTop: 20 }}>
+        <p>Welcome to Slotopol Admin Panel.</p>
+      </div>
+    </div>
+  )
+}
