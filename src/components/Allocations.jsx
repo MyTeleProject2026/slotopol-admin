@@ -1,1 +1,36 @@
-import{useState}from'react';export default function Allocations(){const[a,setA]=useState(''),[u,setU]=useState(''),[t,setT]=useState('credit'),[m,setM]=useState('');function submit(e){e.preventDefault();const v=Number(a);if(!u.trim()||!Number.isFinite(v)||v<=0){setM('Enter a valid user and positive amount.');return}setM(`${t==='credit'?'Credit':'Debit'} request prepared for ${u}: ${v.toLocaleString()} virtual units.`)}return <section><div className="panel narrow"><h2>Virtual-credit allocation</h2><p className="muted">This UI prepares an allocation request; production implementation should enforce authorization, idempotency, audit logging, and server-side balance rules.</p><form className="form-grid" onSubmit={submit}><label>User<input value={u} onChange={e=>setU(e.target.value)} placeholder="User ID or username"/></label><label>Operation<select value={t} onChange={e=>setT(e.target.value)}><option value="credit">Credit</option><option value="debit">Debit</option></select></label><label>Amount<input type="number" min="1" value={a} onChange={e=>setA(e.target.value)} placeholder="0"/></label><button className="primary">Prepare allocation</button></form>{m&&<div className="notice">{m}</div>}</div></section>}
+import { useState } from 'react'
+import api from '../api/client'
+
+export default function Allocations() {
+  const [amount, setAmount] = useState('')
+  const [clubId, setClubId] = useState('')
+  const [message, setMessage] = useState('')
+
+  const handleAllocate = async (e) => {
+    e.preventDefault()
+    try {
+      await api.post('/admin/allocate', { club_id: parseInt(clubId), amount: parseFloat(amount) })
+      setMessage('Allocation request submitted')
+    } catch (err) {
+      setMessage('Error: ' + err.message)
+    }
+  }
+
+  return (
+    <div>
+      <h2>Allocations</h2>
+      <form onSubmit={handleAllocate}>
+        <div>
+          <label>Club ID</label>
+          <input value={clubId} onChange={e => setClubId(e.target.value)} required />
+        </div>
+        <div>
+          <label>Amount</label>
+          <input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} required />
+        </div>
+        <button type="submit">Request Allocation</button>
+      </form>
+      {message && <p>{message}</p>}
+    </div>
+  )
+}
