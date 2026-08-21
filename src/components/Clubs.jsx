@@ -1,1 +1,32 @@
-import{useState}from'react';export default function Clubs(){const[c,setC]=useState([{id:'club-001',name:'Main Club',status:'Active',users:642},{id:'club-002',name:'VIP Club',status:'Active',users:128},{id:'club-003',name:'Test Club',status:'Suspended',users:17}]);const[n,setN]=useState('');function add(e){e.preventDefault();if(!n.trim())return;setC([...c,{id:`club-${String(c.length+1).padStart(3,'0')}`,name:n.trim(),status:'Active',users:0}]);setN('')}return <section><form className="toolbar" onSubmit={add}><input placeholder="New club name" value={n} onChange={e=>setN(e.target.value)}/><button className="primary">Create club</button></form><div className="panel"><h2>Clubs</h2><table><thead><tr><th>ID</th><th>Name</th><th>Status</th><th>Users</th></tr></thead><tbody>{c.map(x=><tr key={x.id}><td>{x.id}</td><td>{x.name}</td><td><span className="badge">{x.status}</span></td><td>{x.users}</td></tr>)}</tbody></table></div></section>}
+import { useEffect, useState } from 'react'
+import api from '../api/client'
+
+export default function Clubs() {
+  const [clubs, setClubs] = useState([])
+
+  useEffect(() => {
+    api.get('/club/list').then(res => setClubs(res.data.clubs))
+  }, [])
+
+  return (
+    <div>
+      <h2>Clubs</h2>
+      <table border="1">
+        <thead>
+          <tr><th>CID</th><th>Name</th><th>Bank</th><th>Fund</th><th>Deposit</th></tr>
+        </thead>
+        <tbody>
+          {clubs.map(c => (
+            <tr key={c.cid}>
+              <td>{c.cid}</td>
+              <td>{c.name}</td>
+              <td>{c.bank}</td>
+              <td>{c.fund}</td>
+              <td>{c.lock}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
