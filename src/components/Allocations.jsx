@@ -16,16 +16,22 @@ export default function Allocations() {
     e.preventDefault()
     try {
       await api.post('/admin/allocate', { club_id: parseInt(clubId), amount: parseFloat(amount) })
-      alert('Allocation Request Created!')
+      alert('✅ Allocation Request Created!')
       setClubId(''); setAmount('')
       fetchAllocations()
-    } catch (e) { alert('Error: ' + e.message) }
+    } catch (e) { 
+      alert('❌ Error: ' + (e.response?.data?.what || e.message)) 
+    }
   }
 
   const handleAction = async (id, action) => {
     if (!confirm(`Are you sure you want to ${action} this allocation?`)) return
-    await api.post(`/admin/allocation/${action}`, { id })
-    fetchAllocations()
+    try {
+      await api.post(`/admin/allocation/${action}`, { id })
+      fetchAllocations()
+    } catch (e) {
+      alert('Error performing action: ' + e.message)
+    }
   }
 
   const statusColors = {
@@ -54,35 +60,39 @@ export default function Allocations() {
         </form>
       </div>
 
-      <div className="glass-card">
-        <table>
-          <thead>
-            <tr><th>ID</th><th>Club ID</th><th>Amount</th><th>Status</th><th>Created At</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {allocations.map(a => (
-              <tr key={a.id}>
-                <td>{a.id}</td>
-                <td>{a.club_id}</td>
-                <td>${a.amount.toLocaleString()}</td>
-                <td>
-                  <span style={{ color: statusColors[a.status] || '#fff', fontWeight: 'bold' }}>
-                    {a.status}
-                  </span>
-                </td>
-                <td>{new Date(a.created_at).toLocaleString()}</td>
-                <td>
-                  {a.status === 'PENDING' && (
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button className="action-btn action-btn-save" onClick={() => handleAction(a.id, 'approve')}>Approve</button>
-                      <button className="action-btn action-btn-delete" onClick={() => handleAction(a.id, 'reject')}>Reject</button>
-                    </div>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="glass-card" style={{ minHeight: '150px' }}>
+        {allocations.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>No allocations created yet.</div>
+        ) : (
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Club ID</th><th>Amount</th><th>Status</th><th>Created At</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {allocations.map(a => (
+                <tr key={a.id}>
+                  <td>{a.id}</td>
+                  <td>{a.club_id}</td>
+                  <td>${a.amount?.toLocaleString() || '0'}</td>
+                  <td>
+                    <span style={{ color: statusColors[a.status] || '#fff', fontWeight: 'bold' }}>
+                      {a.status}
+                    </span>
+                  </td>
+                  <td>{new Date(a.created_at).toLocaleString()}</td>
+                  <td>
+                    {a.status === 'PENDING' && (
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button className="action-btn action-btn-save" onClick={() => handleAction(a.id, 'approve')}>Approve</button>
+                        <button className="action-btn action-btn-delete" onClick={() => handleAction(a.id, 'reject')}>Reject</button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   )
