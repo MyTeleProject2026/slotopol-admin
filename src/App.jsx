@@ -6,50 +6,36 @@ import Users from './components/Users'
 import Games from './components/Games'
 import Allocations from './components/Allocations'
 
-// PrivateRoute protects pages that require login
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token')
   return token ? children : <Navigate to="/login" />
 }
 
-// Layout wrapper for authenticated pages (adds the top navigation)
 function Layout({ children }) {
   const location = useLocation()
-  
+
   const handleLogout = () => {
     localStorage.removeItem('token')
     window.location.href = '/login'
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f3f4f6', padding: '20px' }}>
-      <nav>
-        <span style={{ fontWeight: 'bold', marginRight: '20px', color: '#333' }}>
-          Slotopol Admin
-        </span>
-        <Link to="/">Dashboard</Link>
-        <Link to="/clubs">Clubs</Link>
-        <Link to="/users">Users</Link>
-        <Link to="/games">Games</Link>
-        <Link to="/allocations">Allocations</Link>
-        <button 
-          onClick={handleLogout} 
-          style={{
-            float: 'right',
-            background: '#e53e3e',
-            color: 'white',
-            border: 'none',
-            padding: '8px 16px',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            width: 'auto'
-          }}
-        >
-          Logout
-        </button>
+    <div className="app-wrapper">
+      {/* Glass Navigation Bar */}
+      <nav className="nav-glass">
+        <div className="nav-brand">🎰 Slotopol Admin</div>
+        <div className="nav-links">
+          <Link to="/" className={location.pathname === '/' ? 'active' : ''}>Dashboard</Link>
+          <Link to="/clubs" className={location.pathname === '/clubs' ? 'active' : ''}>Clubs</Link>
+          <Link to="/users" className={location.pathname === '/users' ? 'active' : ''}>Users</Link>
+          <Link to="/games" className={location.pathname === '/games' ? 'active' : ''}>Games</Link>
+          <Link to="/allocations" className={location.pathname === '/allocations' ? 'active' : ''}>Allocations</Link>
+          <button onClick={handleLogout} className="logout-btn">Logout</button>
+        </div>
       </nav>
 
-      <div style={{ maxWidth: '1200px', margin: '20px auto' }}>
+      {/* Main Content */}
+      <div className="content-area">
         {children}
       </div>
     </div>
@@ -66,7 +52,7 @@ function App() {
         element={
           <PrivateRoute>
             <Layout>
-              <Dashboard />
+              <div className="glass-card"><Dashboard /></div>
             </Layout>
           </PrivateRoute>
         } 
@@ -77,7 +63,7 @@ function App() {
         element={
           <PrivateRoute>
             <Layout>
-              <Clubs />
+              <div className="glass-card"><Clubs /></div>
             </Layout>
           </PrivateRoute>
         } 
@@ -88,7 +74,7 @@ function App() {
         element={
           <PrivateRoute>
             <Layout>
-              <Users />
+              <div className="glass-card"><Users /></div>
             </Layout>
           </PrivateRoute>
         } 
@@ -99,7 +85,7 @@ function App() {
         element={
           <PrivateRoute>
             <Layout>
-              <Games />
+              <div className="glass-card"><Games /></div>
             </Layout>
           </PrivateRoute>
         } 
@@ -110,7 +96,7 @@ function App() {
         element={
           <PrivateRoute>
             <Layout>
-              <Allocations />
+              <div className="glass-card"><Allocations /></div>
             </Layout>
           </PrivateRoute>
         } 
