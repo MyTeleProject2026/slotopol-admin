@@ -5,6 +5,7 @@ export default function Games() {
   const [games, setGames] = useState([])
   const [selectedClub, setSelectedClub] = useState('1')
   const [loading, setLoading] = useState(false)
+  const [syncing, setSyncing] = useState(false)
 
   // Fetch games from the backend
   const fetchGames = async () => {
@@ -35,11 +36,54 @@ export default function Games() {
     }
   }
 
+  // ============================================================
+  // NEW FEATURE: Auto-Discover & Enable ALL Games
+  // ============================================================
+  const handleAutoDiscover = async () => {
+    if (!confirm(`This will fetch all compiled games from the backend and enable them for Club ${selectedClub}. Continue?`)) return;
+    
+    setSyncing(true)
+    try {
+      // Step 1: Fetch all games (ignore filters)
+      const res = await api.get(`/game/list?inc=all`)
+      const allGames = res.data.list || []
+
+      if (allGames.length === 0) {
+        alert("No games found in the backend. Did you compile the server with game tags?")
+        setSyncing(false)
+        return
+      }
+
+      // Step 2: Loop through every game and enable it
+      let successCount = 0
+      for (const game of allGames) {
+        try {
+          await api.post('/admin/game/permission', {
+            club_id: parseInt(selectedClub),
+            game_alias: game.alias,
+            enabled: true
+          })
+          successCount++
+        } catch (e) {
+          console.warn(`Failed to enable ${game.alias}`, e)
+        }
+      }
+
+      alert(`✅ Successfully enabled ${successCount} out of ${allGames.length} games for Club ${selectedClub}!`)
+      fetchGames() // Refresh the table
+
+    } catch (error) {
+      alert("Error during auto-discovery: " + error.message)
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   return (
     <div>
       <h2>🎮 Game Library Controller</h2>
       
-      {/* Club Selector */}
+      {/* Club Selector + Auto-Discover Button */}
       <div className="glass-card" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
         <label style={{ color: 'white' }}>Control games for Club ID:</label>
         <input 
@@ -48,7 +92,16 @@ export default function Games() {
           onChange={e => setSelectedClub(e.target.value)} 
           style={{ width: '80px', padding: '8px', color: 'white' }}
         />
-        <span style={{ fontSize: '12px', color: '#888' }}>Enter a Club ID and press Enter to load</span>
+        
+        {/* AUTO-DISCOVER BUTTON */}
+        <button 
+          className="action-btn action-btn-save" 
+          onClick={handleAutoDiscover}
+          disabled={syncing}
+          style={{ width: 'auto', padding: '10px 20px' }}
+        >
+          {syncing ? '⏳ Syncing...' : '🔄 Auto-Discover & Enable All Games'}
+        </button>
       </div>
 
       {/* Game List Table */}
@@ -59,10 +112,8 @@ export default function Games() {
           <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
             <p style={{ marginBottom: '10px' }}>🚫 No games found for Club {selectedClub}.</p>
             <p style={{ fontSize: '13px', color: '#888' }}>
-              If you recently deployed Slotopol-server, you must run the backend Docker build with game tags (e.g. `playngo`, `novomatic`, etc.) so the server compiles the games.
-            </p>
-            <p style={{ fontSize: '13px', color: '#888', marginTop: '10px' }}>
-              Alternatively, ensure your DB has the `club_game_permissions` table created.
+              Click the <b>"Auto-Discover & Enable All Games"</b> button above. 
+              The panel will pull all games from the backend and activate them automatically.
             </p>
           </div>
         ) : (
