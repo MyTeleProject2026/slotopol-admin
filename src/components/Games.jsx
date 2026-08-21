@@ -1,1 +1,26 @@
-import{useState}from'react';export default function Games(){const[g,setG]=useState([{id:'g-001',name:'Classic Slots',provider:'Slotopol',status:'Enabled'},{id:'g-002',name:'Fruit Reels',provider:'Slotopol',status:'Enabled'},{id:'g-003',name:'Demo Roulette',provider:'Slotopol',status:'Disabled'}]);return <section><div className="panel"><h2>Games</h2><table><thead><tr><th>ID</th><th>Game</th><th>Provider</th><th>Status</th><th>Action</th></tr></thead><tbody>{g.map(x=><tr key={x.id}><td>{x.id}</td><td>{x.name}</td><td>{x.provider}</td><td><span className="badge">{x.status}</span></td><td><button onClick={()=>setG(g.map(y=>y.id===x.id?{...y,status:y.status==='Enabled'?'Disabled':'Enabled'}:y))}>{x.status==='Enabled'?'Disable':'Enable'}</button></td></tr>)}</tbody></table></div></section>}
+import { useEffect, useState } from 'react'
+import api from '../api/client'
+
+export default function Users() {
+  const [users, setUsers] = useState([])
+
+  useEffect(() => {
+    // We need a /user/list endpoint – we'll add it later.
+    // For now, we'll manually query known users.
+    api.get('/user/is?uid=1').then(res => setUsers([{uid:1, email:'admin@slotopol.com', name:'Administrator'}]))
+  }, [])
+
+  return (
+    <div>
+      <h2>Users</h2>
+      <table border="1">
+        <thead><tr><th>UID</th><th>Email</th><th>Name</th></tr></thead>
+        <tbody>
+          {users.map(u => (
+            <tr key={u.uid}><td>{u.uid}</td><td>{u.email}</td><td>{u.name}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
