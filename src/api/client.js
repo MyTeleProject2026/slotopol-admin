@@ -1,0 +1,3 @@
+const API_BASE_URL=import.meta.env.VITE_API_BASE_URL||'/api';
+async function request(path,options={}){const token=localStorage.getItem('slotopol_admin_token');const r=await fetch(`${API_BASE_URL}${path}`,{...options,headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{}) ,...(options.headers||{})}});if(!r.ok)throw new Error(await r.text()||`Request failed: ${r.status}`);const ct=r.headers.get('content-type')||'';return ct.includes('application/json')?r.json():r.text()}
+export const api={get:p=>request(p),post:(p,b)=>request(p,{method:'POST',body:JSON.stringify(b)}),put:(p,b)=>request(p,{method:'PUT',body:JSON.stringify(b)}),delete:p=>request(p,{method:'DELETE'})};
