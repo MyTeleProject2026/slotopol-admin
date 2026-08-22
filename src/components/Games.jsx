@@ -40,15 +40,13 @@ export default function Games() {
   }
 
   const handleAutoDiscover = async () => {
-    if (!confirm(`This will fetch all compiled games and enable them for Club ${selectedClub}. Continue?`)) return
-
+    if (!confirm(`This will enable all games for Club ${selectedClub}. Continue?`)) return
     setSyncing(true)
     try {
       const res = await api.get(`/game/list?inc=all`)
       const allGames = res.data.list || []
-
       if (allGames.length === 0) {
-        alert("No games found in the backend. Did you compile the server with game tags?")
+        alert("No games found in backend. Did you compile with game tags?")
         setSyncing(false)
         return
       }
@@ -58,7 +56,6 @@ export default function Games() {
       for (const game of allGames) {
         const alias = getAlias(game.prov, game.name)
         if (!alias) continue
-
         try {
           await api.post('/admin/game/permission', {
             club_id: parseInt(selectedClub),
@@ -71,11 +68,10 @@ export default function Games() {
           failCount++
         }
       }
-
-      alert(`✅ Successfully enabled ${successCount} out of ${allGames.length} games for Club ${selectedClub}!\n\nIf ${failCount} failed, check your database table creation.`)
+      alert(`✅ Enabled ${successCount} out of ${allGames.length} games for Club ${selectedClub}!`)
       fetchGames()
     } catch (error) {
-      alert("Error during auto-discovery: " + (error.response?.data?.what || error.message))
+      alert("Error: " + (error.response?.data?.what || error.message))
     } finally {
       setSyncing(false)
     }
@@ -84,38 +80,20 @@ export default function Games() {
   return (
     <div>
       <h2>🎮 Game Library Controller</h2>
-
       <div className="glass-card" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
         <label style={{ color: 'white' }}>Control games for Club ID:</label>
-        <input
-          type="number"
-          value={selectedClub}
-          onChange={e => setSelectedClub(e.target.value)}
-          style={{ width: '80px', padding: '8px', color: 'white' }}
-        />
-
-        <button
-          className="action-btn action-btn-save"
-          onClick={handleAutoDiscover}
-          disabled={syncing}
-          style={{ width: 'auto', padding: '10px 20px' }}
-        >
+        <input type="number" value={selectedClub} onChange={e => setSelectedClub(e.target.value)} style={{ width: '80px', padding: '8px', color: 'white' }} />
+        <button className="action-btn action-btn-save" onClick={handleAutoDiscover} disabled={syncing} style={{ width: 'auto', padding: '10px 20px' }}>
           {syncing ? '⏳ Syncing...' : '🔄 Auto-Discover & Enable All Games'}
         </button>
       </div>
 
       <div className="glass-card" style={{ minHeight: '200px', overflowX: 'auto' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>Loading available games...</div>
+          <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>Loading...</div>
         ) : games.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-            <p style={{ marginBottom: '10px' }}>🚫 No games found for Club {selectedClub}.</p>
-            <p style={{ fontSize: '13px', color: '#888' }}>
-              Click <b>"Auto-Discover & Enable All Games"</b> above.<br/>
-              <br/>
-              If it still says "0 enabled", run the SQL:<br/>
-              <code>CREATE TABLE IF NOT EXISTS club_game_permissions (club_id BIGINT UNSIGNED NOT NULL, game_alias VARCHAR(128) NOT NULL, enabled BOOLEAN NOT NULL DEFAULT TRUE, PRIMARY KEY (club_id, game_alias));</code>
-            </p>
+            No games found. Click "Auto-Discover" above.
           </div>
         ) : (
           <table style={{ minWidth: '700px', width: '100%' }}>
@@ -130,19 +108,8 @@ export default function Games() {
                     <td><span className="highlight">{rowAlias}</span></td>
                     <td>{g.prov}</td>
                     <td>{g.name}</td>
-                    <td>
-                      <span style={{ color: g.enabled ? '#00F0FF' : '#666' }}>
-                        {g.enabled ? 'ACTIVE' : 'DISABLED'}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        className={g.enabled ? "action-btn action-btn-delete" : "action-btn action-btn-save"}
-                        onClick={() => toggleGame(rowAlias, g.enabled)}
-                      >
-                        {g.enabled ? 'Disable' : 'Enable'}
-                      </button>
-                    </td>
+                    <td><span style={{ color: g.enabled ? '#00F0FF' : '#666' }}>{g.enabled ? 'ACTIVE' : 'DISABLED'}</span></td>
+                    <td><button className={g.enabled ? "action-btn action-btn-delete" : "action-btn action-btn-save"} onClick={() => toggleGame(rowAlias, g.enabled)}>{g.enabled ? 'Disable' : 'Enable'}</button></td>
                   </tr>
                 )
               })}
