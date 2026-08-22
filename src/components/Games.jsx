@@ -7,14 +7,13 @@ export default function Games() {
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
+  // ✅ Use the EXACT format the database needs (with spaces)
   const getAlias = (prov, name) => `${prov} / ${name}`
 
   const fetchGames = async () => {
     setLoading(true)
     try {
-      // ✅ Use a unique timestamp to FORCE fresh data (no browser caching)
-      const nonce = Date.now()
-      const res = await api.get(`/game/list?inc=all&cid=${selectedClub}&_=${nonce}`)
+      const res = await api.get(`/game/list?inc=all&cid=${selectedClub}&_=${Date.now()}`)
       setGames(res.data.list || [])
     } catch (e) {
       console.error("Error fetching games:", e)
@@ -27,20 +26,13 @@ export default function Games() {
   useEffect(() => { fetchGames() }, [selectedClub])
 
   const toggleGame = async (alias, currentStatus) => {
-    if (!confirm(`Are you sure you want to ${currentStatus ? 'DISABLE' : 'ENABLE'} this game?`)) return
-
     try {
       await api.post('/admin/game/permission', {
         club_id: parseInt(selectedClub),
         game_alias: alias,
         enabled: !currentStatus
       })
-      
-      // ✅ Wait 500ms for DB commit, then FORCE refresh
-      setTimeout(() => {
-        fetchGames()
-      }, 500)
-      
+      setTimeout(() => fetchGames(), 500)
     } catch (e) {
       alert("Failed to toggle game. " + (e.response?.data?.what || e.message))
     }
@@ -50,12 +42,10 @@ export default function Games() {
     if (!confirm(`This will enable all games for Club ${selectedClub}. Continue?`)) return
     setSyncing(true)
     try {
-      const nonce = Date.now()
-      const res = await api.get(`/game/list?inc=all&_=${nonce}`)
+      const res = await api.get(`/game/list?inc=all&_=${Date.now()}`)
       const allGames = res.data.list || []
-
       if (allGames.length === 0) {
-        alert("No games found in backend. The backend might be down.")
+        alert("No games found in backend.")
         setSyncing(false)
         return
       }
@@ -76,7 +66,7 @@ export default function Games() {
         }
       }
       alert(`✅ Enabled ${successCount} out of ${allGames.length} games!`)
-      setTimeout(() => { fetchGames() }, 1000)
+      setTimeout(() => fetchGames(), 1000)
     } catch (error) {
       alert("Error: " + (error.response?.data?.what || error.message))
     } finally {
@@ -100,12 +90,7 @@ export default function Games() {
           <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>Loading...</div>
         ) : games.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-            <p>No games found. Try one of these:</p>
-            <p style={{ fontSize: '13px', color: '#888', marginTop: '10px' }}>
-              1. Ensure backend `/game/list` is reachable.<br/>
-              2. Click "Auto-Discover" again.<br/>
-              3. Check browser console for errors.
-            </p>
+            <p>No games found. Click "Auto-Discover" above.</p>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
