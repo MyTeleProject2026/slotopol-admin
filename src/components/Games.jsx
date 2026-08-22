@@ -7,14 +7,12 @@ export default function Games() {
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
-  const getAlias = (prov, name) => {
-    return `${prov} / ${name}`;
-  }
+  // ✅ Use the SAME format as the database (with spaces)
+  const getAlias = (prov, name) => `${prov} / ${name}`
 
   const fetchGames = async () => {
     setLoading(true)
     try {
-      // ✅ Add cache: 'no-store' to prevent browser caching
       const res = await api.get(`/game/list?inc=all&cid=${selectedClub}`, {
         headers: { 'Cache-Control': 'no-cache' }
       })
@@ -69,12 +67,9 @@ export default function Games() {
         }
       }
       alert(`✅ Enabled ${successCount} out of ${allGames.length} games!`)
-      
-      // ✅ Force a delay before refetching so the DB commits
       setTimeout(() => {
         fetchGames()
       }, 1000)
-      
     } catch (error) {
       alert("Error: " + (error.response?.data?.what || error.message))
     } finally {
