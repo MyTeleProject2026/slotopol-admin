@@ -12,12 +12,13 @@ export default function Games() {
   const fetchGames = async () => {
     setLoading(true)
     try {
-      const res = await api.get(`/game/list?inc=all&cid=${selectedClub}`, {
-        headers: { 'Cache-Control': 'no-cache' }
-      })
+      // ✅ Add a unique timestamp to bypass any browser caching
+      const nonce = Date.now()
+      const res = await api.get(`/game/list?inc=all&cid=${selectedClub}&_=${nonce}`)
       setGames(res.data.list || [])
     } catch (e) {
       console.error("Error fetching games:", e)
+      setGames([]) // ✅ Ensure it doesn't retain old data
     } finally {
       setLoading(false)
     }
@@ -42,10 +43,13 @@ export default function Games() {
     if (!confirm(`This will enable all games for Club ${selectedClub}. Continue?`)) return
     setSyncing(true)
     try {
-      const res = await api.get(`/game/list?inc=all`)
+      // ✅ Use nonce to get fresh data
+      const nonce = Date.now()
+      const res = await api.get(`/game/list?inc=all&_=${nonce}`)
       const allGames = res.data.list || []
+
       if (allGames.length === 0) {
-        alert("No games found in backend.")
+        alert("No games found in backend. The backend might be down or returning empty.")
         setSyncing(false)
         return
       }
@@ -66,11 +70,14 @@ export default function Games() {
         }
       }
       alert(`✅ Enabled ${successCount} out of ${allGames.length} games!`)
+      
+      // ✅ Wait for DB to commit, then force fresh fetch
       setTimeout(() => {
         fetchGames()
       }, 1000)
+      
     } catch (error) {
-      alert("Error: " + (error.response?.data?.what || error.message))
+      alert("Error during Auto-Discover: " + (error.response?.data?.what || error.message))
     } finally {
       setSyncing(false)
     }
@@ -91,7 +98,14 @@ export default function Games() {
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>Loading...</div>
         ) : games.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>No games found. Click "Auto-Discover" above.</div>
+          <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+            <p>No games found. Try one of these:</p>
+            <p style={{ fontSize: '13px', color: '#888', marginTop: '10px' }}>
+              1. Ensure backend `/game/list` is reachable.<br/>
+              2. Click "Auto-Discover" again.<br/>
+              3. Check browser console for errors.
+            </p>
+          </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ minWidth: '700px', width: '100%' }}>
