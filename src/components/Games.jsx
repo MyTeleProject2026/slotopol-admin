@@ -7,7 +7,6 @@ export default function Games() {
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
-  // ✅ Use the SAME format as the database (with spaces)
   const getAlias = (prov, name) => `${prov} / ${name}`
 
   const fetchGames = async () => {
