@@ -8,8 +8,8 @@ export default function Games() {
   const [syncing, setSyncing] = useState(false)
 
   const getAlias = (prov, name) => {
-    const str = `${prov}/${name}`
-    return str.toLowerCase().replace(/[^a-z0-9_\/]/g, '')
+    // ✅ Use the EXACT format the backend expects (Space + Slash + Space)
+    return `${prov} / ${name}`;
   }
 
   const fetchGames = async () => {
@@ -53,6 +53,7 @@ export default function Games() {
 
       let successCount = 0
       for (const game of allGames) {
+        // ✅ Use the correct alias (with spaces)
         const alias = getAlias(game.prov, game.name)
         if (!alias) continue
         try {
