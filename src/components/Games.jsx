@@ -7,9 +7,10 @@ export default function Games() {
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
+  // Helper to generate exact alias (same as backend)
   const getAlias = (prov, name) => {
-    const str = `${prov}/${name}`;
-    return str.toLowerCase().replace(/[^a-z0-9_\/]/g, '');
+    const str = `${prov}/${name}`
+    return str.toLowerCase().replace(/[^a-z0-9_\/]/g, '')
   }
 
   const fetchGames = async () => {
@@ -28,10 +29,10 @@ export default function Games() {
 
   const toggleGame = async (alias, currentStatus) => {
     try {
-      await api.post('/admin/game/permission', { 
-        club_id: parseInt(selectedClub), 
+      await api.post('/admin/game/permission', {
+        club_id: parseInt(selectedClub),
         game_alias: alias,
-        enabled: !currentStatus 
+        enabled: !currentStatus
       })
       fetchGames()
     } catch (e) {
@@ -39,9 +40,10 @@ export default function Games() {
     }
   }
 
+  // Auto-Discover & Enable ALL Games
   const handleAutoDiscover = async () => {
-    if (!confirm(`This will fetch all compiled games from the backend and enable them for Club ${selectedClub}. Continue?`)) return;
-    
+    if (!confirm(`This will fetch all compiled games from the backend and enable them for Club ${selectedClub}. Continue?`)) return
+
     setSyncing(true)
     try {
       const res = await api.get(`/game/list?inc=all`)
@@ -72,9 +74,7 @@ export default function Games() {
 
       alert(`✅ Successfully enabled ${successCount} out of ${allGames.length} games for Club ${selectedClub}!`)
       fetchGames()
-
     } catch (error) {
-      // This prints the EXACT error message from the backend (like 400)
       alert("Error during auto-discovery: " + (error.response?.data?.what || error.message))
     } finally {
       setSyncing(false)
@@ -84,18 +84,18 @@ export default function Games() {
   return (
     <div>
       <h2>🎮 Game Library Controller</h2>
-      
+
       <div className="glass-card" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
         <label style={{ color: 'white' }}>Control games for Club ID:</label>
-        <input 
-          type="number" 
-          value={selectedClub} 
-          onChange={e => setSelectedClub(e.target.value)} 
+        <input
+          type="number"
+          value={selectedClub}
+          onChange={e => setSelectedClub(e.target.value)}
           style={{ width: '80px', padding: '8px', color: 'white' }}
         />
-        
-        <button 
-          className="action-btn action-btn-save" 
+
+        <button
+          className="action-btn action-btn-save"
           onClick={handleAutoDiscover}
           disabled={syncing}
           style={{ width: 'auto', padding: '10px 20px' }}
@@ -104,25 +104,25 @@ export default function Games() {
         </button>
       </div>
 
-      <div className="glass-card" style={{ minHeight: '200px' }}>
+      <div className="glass-card" style={{ minHeight: '200px', overflowX: 'auto' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>Loading available games...</div>
         ) : games.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
             <p style={{ marginBottom: '10px' }}>🚫 No games found for Club {selectedClub}.</p>
             <p style={{ fontSize: '13px', color: '#888' }}>
-              Click the <b>"Auto-Discover & Enable All Games"</b> button above. 
+              Click the <b>"Auto-Discover & Enable All Games"</b> button above.
               The panel will pull all games from the backend and activate them automatically.
             </p>
           </div>
         ) : (
-          <table>
+          <table style={{ minWidth: '700px', width: '100%' }}>
             <thead>
               <tr><th>Alias</th><th>Provider</th><th>Title</th><th>Status</th><th>Action</th></tr>
             </thead>
             <tbody>
               {games.map(g => {
-                const rowAlias = getAlias(g.prov, g.name);
+                const rowAlias = getAlias(g.prov, g.name)
                 return (
                   <tr key={rowAlias}>
                     <td><span className="highlight">{rowAlias}</span></td>
@@ -134,7 +134,7 @@ export default function Games() {
                       </span>
                     </td>
                     <td>
-                      <button 
+                      <button
                         className={g.enabled ? "action-btn action-btn-delete" : "action-btn action-btn-save"}
                         onClick={() => toggleGame(rowAlias, g.enabled)}
                       >
