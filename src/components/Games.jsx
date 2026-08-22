@@ -52,7 +52,6 @@ export default function Games() {
       }
 
       let successCount = 0
-      let failCount = 0
       for (const game of allGames) {
         const alias = getAlias(game.prov, game.name)
         if (!alias) continue
@@ -65,7 +64,6 @@ export default function Games() {
           successCount++
         } catch (e) {
           console.warn(`Failed to enable ${alias}`, e)
-          failCount++
         }
       }
       alert(`✅ Enabled ${successCount} out of ${allGames.length} games!`)
@@ -94,7 +92,7 @@ export default function Games() {
         ) : games.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>No games found. Click "Auto-Discover" above.</div>
         ) : (
-          <div style={{ overflowX: 'auto' }}> {/* <-- THIS FIXES MOBILE SCREEN */}
+          <div style={{ overflowX: 'auto' }}>
             <table style={{ minWidth: '700px', width: '100%' }}>
               <thead>
                 <tr><th>Alias</th><th>Provider</th><th>Title</th><th>Status</th><th>Action</th></tr>
@@ -107,8 +105,16 @@ export default function Games() {
                       <td><span className="highlight">{rowAlias}</span></td>
                       <td>{g.prov}</td>
                       <td>{g.name}</td>
-                      <td><span style={{ color: g.enabled ? '#00F0FF' : '#666' }}>{g.enabled ? 'ACTIVE' : 'DISABLED'}</span></td>
-                      <td><button className={g.enabled ? "action-btn action-btn-delete" : "action-btn action-btn-save"} onClick={() => toggleGame(rowAlias, g.enabled)}>{g.enabled ? 'Disable' : 'Enable'}</button></td>
+                      <td>
+                        <span style={{ color: g.enabled ? '#00F0FF' : '#666', fontWeight: 'bold' }}>
+                          {g.enabled ? 'ACTIVE' : 'DISABLED'}
+                        </span>
+                      </td>
+                      <td>
+                        <button className={g.enabled ? "action-btn action-btn-delete" : "action-btn action-btn-save"} onClick={() => toggleGame(rowAlias, g.enabled)}>
+                          {g.enabled ? 'Disable' : 'Enable'}
+                        </button>
+                      </td>
                     </tr>
                   )
                 })}
