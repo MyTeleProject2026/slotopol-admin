@@ -3,9 +3,10 @@ import api from '../api/client'
 
 export default function Clubs() {
   const [clubs, setClubs] = useState([])
-  const [editMode, setEditMode] = useState(null) // CID of club being edited
+  const [editMode, setEditMode] = useState(null)
 
-  const fetchClubs = () => api.get('/club/list').then(res => setClubs(res.data.clubs || []))
+  // ✅ Use POST (backend expects POST)
+  const fetchClubs = () => api.post('/club/list').then(res => setClubs(res.data.clubs || []))
 
   useEffect(() => { fetchClubs() }, [])
 
