@@ -8,14 +8,16 @@ export default function Games() {
   const [syncing, setSyncing] = useState(false)
 
   const getAlias = (prov, name) => {
-    // ✅ Use the EXACT format the backend expects (Space + Slash + Space)
     return `${prov} / ${name}`;
   }
 
   const fetchGames = async () => {
     setLoading(true)
     try {
-      const res = await api.get(`/game/list?inc=all&cid=${selectedClub}`)
+      // ✅ Add cache: 'no-store' to prevent browser caching
+      const res = await api.get(`/game/list?inc=all&cid=${selectedClub}`, {
+        headers: { 'Cache-Control': 'no-cache' }
+      })
       setGames(res.data.list || [])
     } catch (e) {
       console.error("Error fetching games:", e)
@@ -53,7 +55,6 @@ export default function Games() {
 
       let successCount = 0
       for (const game of allGames) {
-        // ✅ Use the correct alias (with spaces)
         const alias = getAlias(game.prov, game.name)
         if (!alias) continue
         try {
@@ -68,7 +69,12 @@ export default function Games() {
         }
       }
       alert(`✅ Enabled ${successCount} out of ${allGames.length} games!`)
-      fetchGames()
+      
+      // ✅ Force a delay before refetching so the DB commits
+      setTimeout(() => {
+        fetchGames()
+      }, 1000)
+      
     } catch (error) {
       alert("Error: " + (error.response?.data?.what || error.message))
     } finally {
