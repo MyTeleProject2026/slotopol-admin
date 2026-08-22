@@ -7,7 +7,6 @@ export default function Games() {
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
-  // Helper to generate exact alias (same as backend)
   const getAlias = (prov, name) => {
     const str = `${prov}/${name}`
     return str.toLowerCase().replace(/[^a-z0-9_\/]/g, '')
@@ -40,9 +39,8 @@ export default function Games() {
     }
   }
 
-  // Auto-Discover & Enable ALL Games
   const handleAutoDiscover = async () => {
-    if (!confirm(`This will fetch all compiled games from the backend and enable them for Club ${selectedClub}. Continue?`)) return
+    if (!confirm(`This will fetch all compiled games and enable them for Club ${selectedClub}. Continue?`)) return
 
     setSyncing(true)
     try {
@@ -56,6 +54,7 @@ export default function Games() {
       }
 
       let successCount = 0
+      let failCount = 0
       for (const game of allGames) {
         const alias = getAlias(game.prov, game.name)
         if (!alias) continue
@@ -69,10 +68,11 @@ export default function Games() {
           successCount++
         } catch (e) {
           console.warn(`Failed to enable ${alias}`, e)
+          failCount++
         }
       }
 
-      alert(`✅ Successfully enabled ${successCount} out of ${allGames.length} games for Club ${selectedClub}!`)
+      alert(`✅ Successfully enabled ${successCount} out of ${allGames.length} games for Club ${selectedClub}!\n\nIf ${failCount} failed, check your database table creation.`)
       fetchGames()
     } catch (error) {
       alert("Error during auto-discovery: " + (error.response?.data?.what || error.message))
@@ -111,8 +111,10 @@ export default function Games() {
           <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
             <p style={{ marginBottom: '10px' }}>🚫 No games found for Club {selectedClub}.</p>
             <p style={{ fontSize: '13px', color: '#888' }}>
-              Click the <b>"Auto-Discover & Enable All Games"</b> button above.
-              The panel will pull all games from the backend and activate them automatically.
+              Click <b>"Auto-Discover & Enable All Games"</b> above.<br/>
+              <br/>
+              If it still says "0 enabled", run the SQL:<br/>
+              <code>CREATE TABLE IF NOT EXISTS club_game_permissions (club_id BIGINT UNSIGNED NOT NULL, game_alias VARCHAR(128) NOT NULL, enabled BOOLEAN NOT NULL DEFAULT TRUE, PRIMARY KEY (club_id, game_alias));</code>
             </p>
           </div>
         ) : (
