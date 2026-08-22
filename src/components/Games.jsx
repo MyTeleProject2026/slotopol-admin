@@ -12,13 +12,13 @@ export default function Games() {
   const fetchGames = async () => {
     setLoading(true)
     try {
-      // ✅ Add a unique timestamp to bypass any browser caching
+      // ✅ Use a unique timestamp to FORCE fresh data (no browser caching)
       const nonce = Date.now()
       const res = await api.get(`/game/list?inc=all&cid=${selectedClub}&_=${nonce}`)
       setGames(res.data.list || [])
     } catch (e) {
       console.error("Error fetching games:", e)
-      setGames([]) // ✅ Ensure it doesn't retain old data
+      setGames([])
     } finally {
       setLoading(false)
     }
@@ -27,13 +27,20 @@ export default function Games() {
   useEffect(() => { fetchGames() }, [selectedClub])
 
   const toggleGame = async (alias, currentStatus) => {
+    if (!confirm(`Are you sure you want to ${currentStatus ? 'DISABLE' : 'ENABLE'} this game?`)) return
+
     try {
       await api.post('/admin/game/permission', {
         club_id: parseInt(selectedClub),
         game_alias: alias,
         enabled: !currentStatus
       })
-      fetchGames()
+      
+      // ✅ Wait 500ms for DB commit, then FORCE refresh
+      setTimeout(() => {
+        fetchGames()
+      }, 500)
+      
     } catch (e) {
       alert("Failed to toggle game. " + (e.response?.data?.what || e.message))
     }
@@ -43,13 +50,12 @@ export default function Games() {
     if (!confirm(`This will enable all games for Club ${selectedClub}. Continue?`)) return
     setSyncing(true)
     try {
-      // ✅ Use nonce to get fresh data
       const nonce = Date.now()
       const res = await api.get(`/game/list?inc=all&_=${nonce}`)
       const allGames = res.data.list || []
 
       if (allGames.length === 0) {
-        alert("No games found in backend. The backend might be down or returning empty.")
+        alert("No games found in backend. The backend might be down.")
         setSyncing(false)
         return
       }
@@ -70,14 +76,9 @@ export default function Games() {
         }
       }
       alert(`✅ Enabled ${successCount} out of ${allGames.length} games!`)
-      
-      // ✅ Wait for DB to commit, then force fresh fetch
-      setTimeout(() => {
-        fetchGames()
-      }, 1000)
-      
+      setTimeout(() => { fetchGames() }, 1000)
     } catch (error) {
-      alert("Error during Auto-Discover: " + (error.response?.data?.what || error.message))
+      alert("Error: " + (error.response?.data?.what || error.message))
     } finally {
       setSyncing(false)
     }
