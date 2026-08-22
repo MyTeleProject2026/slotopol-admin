@@ -5,7 +5,6 @@ export default function Clubs() {
   const [clubs, setClubs] = useState([])
   const [editMode, setEditMode] = useState(null)
 
-  // ✅ Use POST (backend expects POST)
   const fetchClubs = () => api.post('/club/list').then(res => setClubs(res.data.clubs || []))
 
   useEffect(() => { fetchClubs() }, [])
@@ -29,13 +28,13 @@ export default function Clubs() {
   return (
     <div>
       <h2>🏛️ Club Management</h2>
-      <div className="glass-card" style={{ minHeight: '200px' }}>
+      <div className="glass-card" style={{ minHeight: '200px', overflowX: 'auto' }}>
         {clubs.length === 0 ? (
           <div style={{ textAlign: 'center', color: '#666', padding: '40px 0' }}>
             No clubs found in the database. Please initialize them via SQL.
           </div>
         ) : (
-          <table>
+          <table style={{ minWidth: '600px', width: '100%' }}>
             <thead>
               <tr><th>ID</th><th>Name</th><th>Bank</th><th>Jackpot Fund</th><th>Deposit</th><th>Actions</th></tr>
             </thead>
