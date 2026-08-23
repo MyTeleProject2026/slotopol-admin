@@ -1,27 +1,30 @@
 import { useEffect, useState } from 'react'
 import api from '../api/client'
 
-export default function Clubs() {
-  const [clubs, setClubs] = useState([])
-  const [editMode, setEditMode] = useState(null)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+const unwrap = (data) => {
+  if (Array.isArray(data)) return data
+  if (Array.isArray(data?.clubs)) return data.clubs
+  if (Array.isArray(data?.data?.clubs)) return data.data.clubs
+  if (Array.isArray(data?.data)) return data.data
+  if (Array.isArray(data?.list)) return data.list
+  return []
+}
 
+export default function Clubs() {
+  const [clubs, setClubs] = useState([]), [error, setError] = useState(''), [loading, setLoading] = useState(false)
   const fetchClubs = async () => {
     setLoading(true); setError('')
     try {
-      const res = await api.post('/club/list')
-      setClubs(res.data?.clubs || res.data?.data?.clubs || [])
+      const res = await api.post('/club/list', {})
+      const list = unwrap(res.data)
+      setClubs(list)
+      if (!list.length && res.data?.what) setError(res.data.what)
     } catch (e) {
       setClubs([])
       setError(e.response?.data?.what || e.response?.data?.error || e.message || 'Unable to load clubs')
     } finally { setLoading(false) }
   }
-
   useEffect(() => { fetchClubs() }, [])
-  const handleRename = async (cid, name) => { await api.post('/club/rename', { cid, name }); setEditMode(null); await fetchClubs() }
-  const handleCashin = async (cid, sum) => { await api.post('/club/cashin', { cid, sum }); await fetchClubs() }
-  const handleJackpot = async (cid, fund) => { await api.post('/club/jpfund', { cid, fund }); await fetchClubs() }
-
-  return <div><div style={{display:'flex',gap:12,alignItems:'center',justifyContent:'space-between'}}><h2>🏛️ Club Management</h2><button className="action-btn action-btn-save" onClick={fetchClubs} disabled={loading}>🔄 Refresh</button></div>{error&&<div className="error">{error}</div>}<div className="glass-card" style={{minHeight:200,overflowX:'auto'}}>{loading?<div style={{textAlign:'center',padding:40}}>Loading clubs...</div>:clubs.length===0?<div style={{textAlign:'center',color:'#aaa',padding:40}}>No clubs returned by Slotopol-server.</div>:<table style={{minWidth:700,width:'100%'}}><thead><tr><th>ID</th><th>Name</th><th>Provider Bank</th><th>Jackpot Fund</th><th>Deposit</th><th>Actions</th></tr></thead><tbody>{clubs.map(c=><tr key={c.cid}><td>{c.cid}</td><td>{editMode===c.cid?<div className="inline-edit"><input defaultValue={c.name} id={`name-${c.cid}`}/><button className="action-btn action-btn-save" onClick={()=>handleRename(c.cid,document.getElementById(`name-${c.cid}`).value)}>Save</button><button className="action-btn action-btn-delete" onClick={()=>setEditMode(null)}>Cancel</button></div>:<span className="highlight">{c.name}</span>}</td><td>{Number(c.bank||0).toLocaleString()}</td><td><div className="inline-edit"><span>{Number(c.fund||0).toLocaleString()}</span><button className="action-btn action-btn-edit" onClick={()=>{const v=prompt('Enter new jackpot fund amount',c.fund||0);if(v!==null&&!Number.isNaN(Number(v)))handleJackpot(c.cid,Number(v))}}>Edit</button></div></td><td>{Number(c.lock||0).toLocaleString()}</td><td><div style={{display:'flex',gap:6,flexWrap:'wrap'}}><button className="action-btn action-btn-edit" onClick={()=>setEditMode(c.cid)}>Rename</button><button className="action-btn action-btn-save" onClick={()=>{const v=prompt('Enter provider balance adjustment','0');if(v!==null&&!Number.isNaN(Number(v)))handleCashin(c.cid,Number(v))}}>Add / Remove Balance</button></div></td></tr>)}</tbody></table>}</div></div>
+  const call = async (path, body) => { try { await api.post(path, body); await fetchClubs() } catch(e) { setError(e.response?.data?.what || e.message) } }
+  return <div><div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><h2>🏛️ Club Management</h2><button className="action-btn action-btn-save" onClick={fetchClubs}>Refresh</button></div>{error&&<div className="error">{error}</div>}<div className="glass-card" style={{minHeight:200,overflowX:'auto'}}>{loading?<p>Loading clubs…</p>:clubs.length===0?<p>No clubs returned. Check that the logged-in Slotopol account has global/club administrator permission and that VITE_API_URL points to the current Slotopol-server.</p>:<table style={{width:'100%'}}><thead><tr><th>ID</th><th>Name</th><th>Bank</th><th>Fund</th><th>Actions</th></tr></thead><tbody>{clubs.map(c=><tr key={c.cid||c.id}><td>{c.cid||c.id}</td><td>{c.name}</td><td>{Number(c.bank||0).toLocaleString()}</td><td>{Number(c.fund||0).toLocaleString()}</td><td><button className="action-btn action-btn-save" onClick={()=>{const sum=prompt('Balance adjustment');if(sum!==null)call('/club/cashin',{cid:c.cid||c.id,sum:Number(sum)})}}>Balance</button><button className="action-btn action-btn-edit" onClick={()=>{const name=prompt('Club name',c.name);if(name)call('/club/rename',{cid:c.cid||c.id,name})}}>Rename</button></td></tr>)}</tbody></table>}</div></div>
 }
