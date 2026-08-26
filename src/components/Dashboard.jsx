@@ -2,76 +2,48 @@ import { useEffect, useState } from 'react'
 import api from '../api/client'
 
 export default function Dashboard() {
-  const [logs, setLogs] = useState([])
+  const [state, setState] = useState({ loading: true, error: '', server: null, clubs: 0, users: 0, games: 0, currencies: 0 })
 
-  // Simulate fetching live logs. In the future, your backend can provide a /logs endpoint.
-  useEffect(() => {
-    // Connect to a fake log generator for demo purposes
-    const interval = setInterval(() => {
-      const now = new Date().toLocaleTimeString()
-      const types = ['INFO', 'WARN', 'ERROR']
-      const type = types[Math.floor(Math.random() * types.length)]
-      const messages = [
-        'User 3 (Player) spin success on Novomatic/DolphinsPearl',
-        'API /game/list called by Admin',
-        'Club 1 bank updated: +5000 credits',
-        'Allocation #102 PENDING created for Club 2',
-        'Database connection keep-alive ping OK',
-        'User 1 (Admin) logged in successfully',
-        'Game list retrieval failed: context deadline exceeded'
-      ]
-      const msg = messages[Math.floor(Math.random() * messages.length)]
-      
-      setLogs(prev => {
-        const newLogs = [{ time: now, type, msg }, ...prev]
-        return newLogs.slice(0, 100) // keep last 100 logs
-      })
-    }, 3000)
+  const load = async () => {
+    setState(current => ({ ...current, loading: true, error: '' }))
+    try {
+      const [server, clubs, users, games, currencies] = await Promise.all([
+        api.get('/servinfo'),
+        api.post('/club/list', {}),
+        api.get('/admin/users'),
+        api.get('/game/list', { params: { inc: 'all', sort: true } }),
+        api.get('/admin/club/currency-balances')
+      ])
+      const clubRows = Array.isArray(clubs.data) ? clubs.data : (clubs.data?.clubs || clubs.data?.list || clubs.data?.data || [])
+      const userRows = users.data?.users || []
+      const gameRows = games.data?.list || []
+      const currencyRows = currencies.data?.balances || []
+      setState({ loading: false, error: '', server: server.data, clubs: clubRows.length, users: userRows.length, games: gameRows.length, currencies: currencyRows.length })
+    } catch (e) {
+      setState(current => ({ ...current, loading: false, error: e.response?.data?.what || e.message || 'Unable to load live server state' }))
+    }
+  }
 
-    return () => clearInterval(interval)
-  }, [])
+  useEffect(() => { load() }, [])
+
+  const cards = [
+    ['🏛️', state.clubs, 'Clubs'],
+    ['🧑‍💻', state.users, 'Users'],
+    ['🎮', state.games, 'Games Available'],
+    ['💱', state.currencies, 'Currency Balances']
+  ]
 
   return (
     <div>
-      <h2>Main Control Center</h2>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><h2>Main Control Center</h2><button className="action-btn action-btn-save" onClick={load} disabled={state.loading}>{state.loading ? 'Refreshing…' : 'Refresh'}</button></div>
+      {state.error && <div className="error-message">{state.error}</div>}
       <div className="dashboard-grid">
-        <div className="glass-card stat-card gold-border">
-          <span className="stat-icon">🏛️</span>
-          <div className="stat-value">3</div>
-          <div className="stat-label">Active Clubs</div>
-        </div>
-        <div className="glass-card stat-card cyan-border">
-          <span className="stat-icon">🧑‍💻</span>
-          <div className="stat-value">12</div>
-          <div className="stat-label">Total Users</div>
-        </div>
-        <div className="glass-card stat-card pink-border">
-          <span className="stat-icon">🎮</span>
-          <div className="stat-value">172</div>
-          <div className="stat-label">Games Available</div>
-        </div>
-        <div className="glass-card stat-card purple-border">
-          <span className="stat-icon">💰</span>
-          <div className="stat-value">$1,000,000</div>
-          <div className="stat-label">Master Bank</div>
-        </div>
+        {cards.map(([icon, value, label]) => <div className="glass-card stat-card" key={label}><span className="stat-icon">{icon}</span><div className="stat-value">{state.loading ? '…' : value.toLocaleString()}</div><div className="stat-label">{label}</div></div>)}
       </div>
-
-      {/* LIVE TERMINAL LOGS */}
-      <div className="glass-card" style={{ padding: '0', overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(249,200,14,0.1)', background: 'rgba(0,0,0,0.3)' }}>
-          <span style={{ fontFamily: 'Orbitron', fontSize: '14px', color: '#F9C80E' }}>📡 LIVE BACKEND ACTIVITY TERMINAL</span>
-        </div>
-        <div className="terminal-window">
-          {logs.length === 0 && <div style={{ color: '#666' }}>Waiting for backend activity...</div>}
-          {logs.map((log, idx) => (
-            <div key={idx} className="log-line">
-              <span className="log-time">[{log.time}]</span>
-              <span className={`log-level-${log.type.toLowerCase()}`}>[{log.type}]</span>
-              <span>{log.msg}</span>
-            </div>
-          ))}
-        </div>
+      <div className="glass-card" style={{padding:'20px'}}>
+        <h3>Server Connection</h3>
+        <p>{state.server ? `Connected to Slotopol-server ${state.server.version || state.server.build || ''}` : 'Waiting for server response…'}</p>
+        <p style={{color:'#888'}}>All dashboard figures above are fetched from the configured Slotopol-server; no demo/random activity is generated in the browser.</p>
       </div>
     </div>
   )
